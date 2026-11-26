@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,9 +24,17 @@ func run(ctx context.Context, args []string, stderr io.Writer) int {
 		return 2
 	}
 	client := &http.Client{Timeout: 30 * time.Second}
-	if _, err := analyze(ctx, client, files, opt, stderr); err != nil {
+	stats, err := analyze(ctx, client, files, opt, stderr)
+	if err != nil {
 		_, _ = fmt.Fprintln(stderr, err)
 		return 2
+	}
+	if err := saveReport(opt, report{Files: files, statistics: stats}); err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		if errors.Is(err, os.ErrExist) || errors.Is(err, os.ErrPermission) || errors.Is(err, os.ErrNotExist) {
+			return 2
+		}
+		return 1
 	}
 	return 0
 }
