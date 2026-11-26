@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -22,11 +23,32 @@ func run(ctx context.Context, args []string, stderr io.Writer) int {
 		return 2
 	}
 	client := &http.Client{Timeout: 30 * time.Second}
-	if err := readSources(ctx, client, files, func(string) {}); err != nil {
+	if _, err := analyze(ctx, client, files, opt, stderr); err != nil {
 		_, _ = fmt.Fprintln(stderr, err)
 		return 2
 	}
 	return 0
+}
+
+func analyze(ctx context.Context, client *http.Client, files []string, opt options, stderr io.Writer) (statistics, error) {
+	counts := newCounter()
+	err := readSources(ctx, client, files, func(line string) {
+		if strings.TrimSpace(line) == "" {
+			return
+		}
+		record, ok := parseRecord(line)
+		if !ok {
+			_, _ = fmt.Fprintln(stderr, "WARN: skipped malformed log line")
+			return
+		}
+		if opt.includes(record.Time) {
+			counts.add(record)
+		}
+	})
+	if err != nil {
+		return statistics{}, err
+	}
+	return counts.result(), nil
 }
 
 func main() {
