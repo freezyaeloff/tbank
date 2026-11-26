@@ -7,25 +7,26 @@ import (
 )
 
 type resourceCount struct {
-	Resource string
-	Count    int
+	Resource string `json:"resource"`
+	Count    int    `json:"count"`
 }
 
 type codeCount struct {
-	Code  int
-	Count int
+	Code  int `json:"code"`
+	Count int `json:"count"`
 }
 
 type sizeStats struct {
-	Average  float64
-	Max, P95 int64
+	Average float64 `json:"average"`
+	Max     int64   `json:"max"`
+	P95     int64   `json:"p95"`
 }
 
 type statistics struct {
-	Total     int
-	Size      sizeStats
-	Resources []resourceCount
-	Codes     []codeCount
+	Total     int             `json:"totalRequestsCount"`
+	Size      sizeStats       `json:"responseSizeInBytes"`
+	Resources []resourceCount `json:"resources"`
+	Codes     []codeCount     `json:"responseCodes"`
 }
 
 type counter struct {
